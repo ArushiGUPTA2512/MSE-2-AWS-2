@@ -1,36 +1,67 @@
-# AWS Sales Data Analytics: CSV vs Parquet Performance Benchmarking
+# AWS Sales Data Analytics – CSV to Parquet Conversion and Performance Comparison
 
-**Project Repository:** MSE-2-AWS-2  
-**Platform:** Amazon Web Services (AWS)  
-**Region:** Asia Pacific (Mumbai) – ap-south-1  
-**Database:** sales_db
+**Project:** Amazon Athena – CTAS, Parquet Conversion and Data Partitioning   
+**AWS Region:** Asia Pacific (Mumbai) – ap-south-1
 
 ---
 
 # 1. Project Overview
 
-This project demonstrates how to store, process, and analyze sales data using Amazon S3 and Amazon Athena.
+An e-commerce company has a large sales dataset stored in Amazon S3 and wants to improve query performance and reduce data scanning costs.
 
-The project uses a CSV dataset stored in Amazon S3. Amazon Athena is used to create external tables and execute SQL queries on the dataset. The CSV data is then converted into Parquet format using CTAS (Create Table As Select) and partitioned by year and month.
+This project uses Amazon S3 and Amazon Athena to analyze sales data stored in CSV format. The original CSV dataset is converted into Parquet format using CTAS (Create Table As Select), with data partitioning based on year and month.
 
-Finally, the same analytical query is executed on both CSV and Parquet tables to compare data scanned and query execution time.
+Finally, the same SQL queries are executed on both CSV and Parquet tables to compare their data scanning and execution performance.
 
-## 2. Project Objectives
+# 2. Project Objectives
 
-- Store sales data in Amazon S3.
+- Create an S3 bucket to store sales data.
+- Upload the original CSV dataset to Amazon S3.
 - Create an Athena database and external table.
 - Execute SQL queries on CSV data.
 - Calculate monthly sales and total orders.
-- Convert CSV data into Parquet format.
+- Convert CSV data into Parquet format using CTAS.
 - Implement year and month partitioning.
 - Compare CSV and Parquet query performance.
 
-## 3. AWS Services Used
+# 3. Dataset Information
 
-| Service | Purpose |
+**Dataset Name:** `Activity03_Athena_sales.csv`
+
+The uploaded dataset was inspected before implementation.
+
+| Dataset Property | Value |
+|---|---|
+| File Format | CSV |
+| Total Records | 20,000 |
+| Total Columns | 12 |
+| First Date | 2025-01-01 |
+| Last Date | 2026-06-30 |
+| Years Covered | 2025 and 2026 |
+
+### Dataset Columns
+
+| Column | Data Type | Description |
+|---|---|---|
+| order_id | STRING | Unique order identifier |
+| order_date | STRING | Date of order |
+| customer_id | STRING | Customer identifier |
+| product | STRING | Product name |
+| category | STRING | Product category |
+| quantity | INT | Quantity purchased |
+| unit_price | DOUBLE | Price per unit |
+| total_amount | DOUBLE | Total order amount |
+| city | STRING | Customer city |
+| payment_mode | STRING | Payment method |
+| year | INT | Order year |
+| month | INT | Order month |
+
+# 4. AWS Services Used
+
+| AWS Service | Purpose |
 |---|---|
 | Amazon S3 | Stores CSV and Parquet datasets |
-| Amazon Athena | Executes SQL queries |
+| Amazon Athena | Runs SQL queries on S3 data |
 | AWS Glue Data Catalog | Stores database and table metadata |
 
 ---
@@ -47,24 +78,24 @@ Finally, the same analytical query is executed on both CSV and Parquet tables to
 
 **Why are we selecting this region?**
 
-S3 and Athena resources should be configured in the same region for this project.
+S3 and Athena resources should be in the same region for this project.
 
-**Expected Result:** AWS Console displays Mumbai as the selected region.
+**Expected Result:** Mumbai region is selected.
 
 ## STEP 3 – Open Amazon S3
 
 1. Go to the AWS Console search bar.
 2. Type S3.
-3. Under Services, select Amazon S3.
+3. Under Services, click Amazon S3.
 4. Open the S3 dashboard.
 5. Click Buckets from the left navigation.
 6. Click Create bucket.
 
-**Expected Result:** The Create bucket configuration page opens.
+**Expected Result:** Create bucket configuration page opens.
 
 ## STEP 4 – Create an S3 Bucket
 
-Configure the bucket settings:
+Configure the following settings:
 
 | Field | Configuration |
 |---|---|
@@ -82,22 +113,17 @@ Configure the bucket settings:
 4. Click Create bucket.
 5. Wait for the success message.
 
-**Expected Result:** Your bucket appears in the S3 bucket list.
-
-**What did we achieve?**
-
-Created an S3 bucket to store the original CSV dataset, converted Parquet files and Athena query results.
+**Expected Result:** The bucket appears in the S3 bucket list.
 
 ## STEP 5 – Create the sales-csv Folder
 
-1. Open the bucket:
-   athena-sales-project-arushi-2026
+1. Open the bucket `athena-sales-project-arushi-2026`.
 2. Click Create folder.
-3. Enter the folder name:
+3. Enter folder name:
 
-   sales-csv
+   `sales-csv`
 
-4. Keep other options unchanged.
+4. Keep other settings unchanged.
 5. Click Create folder.
 
 **Expected Result:**
@@ -113,10 +139,10 @@ athena-sales-project-arushi-2026/
 2. Click Upload.
 3. Click Add files.
 4. Browse your computer.
-5. Locate the extracted dataset.
-6. Select Activity03_Athena_sales.csv.
+5. Locate the dataset.
+6. Select `Activity03_Athena_sales.csv`.
 7. Click Open.
-8. Scroll down on the S3 upload page.
+8. Scroll down.
 9. Click Upload.
 10. Wait for upload completion.
 11. Click Close.
@@ -130,7 +156,7 @@ sales-csv/
 
 **What did we achieve?**
 
-Uploaded the original sales dataset to Amazon S3 without changing the CSV file.
+Uploaded the original 20,000-record sales dataset into Amazon S3 without modifying the CSV file.
 
 ## STEP 7 – Open Amazon Athena
 
@@ -139,7 +165,7 @@ Uploaded the original sales dataset to Amazon S3 without changing the CSV file.
 3. Type Athena.
 4. Select Amazon Athena.
 5. Open the Athena dashboard.
-6. Click Query editor in the left navigation.
+6. Click Query editor from the left navigation.
 
 **Expected Result:**
 
@@ -148,13 +174,11 @@ You should see:
 - SQL writing area
 - Database dropdown
 - Run button
-- Recent queries / Query history
-
-We will use the SQL editor for the remaining queries.
+- Recent queries
 
 ## STEP 8 – Configure Athena Query Result Location
 
-Athena requires an S3 location to store query output.
+Athena needs an S3 location to store query results.
 
 1. Open Athena Query Editor.
 2. Click Settings.
@@ -169,40 +193,31 @@ s3://athena-sales-project-arushi-2026/athena-results/
 6. Keep other settings at default.
 7. Click Save.
 
-**Expected Result:** The query result location is saved.
-
-**Why is this required?**
-
-Whenever Athena executes a query, it stores query output and execution metadata in the configured S3 location.
-
-Note: You do not need to manually create the athena-results folder.
+**Expected Result:** Query result location is saved.
 
 ## STEP 9 – Create the Database sales_db
 
-1. Open Athena Query Editor.
+1. Open Query Editor.
 2. Select the Editor tab.
-3. Click inside the SQL editor.
-4. Execute the following query:
+3. Paste the following SQL query:
 
 ```sql
 CREATE DATABASE IF NOT EXISTS sales_db;
 ```
 
-5. Click Run.
-6. Wait for successful execution.
-7. Select sales_db from the Database dropdown.
+4. Click Run.
+5. Wait for successful execution.
+6. Select `sales_db` from the Database dropdown.
 
-**Expected Result:**
+**Expected Result:** Database sales_db is created successfully.
 
-Query successful.
-
-The database sales_db is now available in the AWS Glue Data Catalog.
+The database metadata is stored in AWS Glue Data Catalog.
 
 ## STEP 10 – Create the CSV External Table sales_csv
 
-1. Make sure the selected database is sales_db.
-2. Open the SQL editor.
-3. Paste the following query:
+Make sure the selected database is `sales_db`.
+
+Execute:
 
 ```sql
 CREATE EXTERNAL TABLE sales_csv (
@@ -228,20 +243,18 @@ TBLPROPERTIES (
 );
 ```
 
-4. Click Run.
-5. Wait for query execution.
-6. Refresh the Tables list on the left if necessary.
+1. Click Run.
+2. Wait for successful execution.
+3. Refresh the Tables list on the left if required.
 
-**Expected Result:**
-
-A new table named sales_csv appears.
+**Expected Result:** A table named `sales_csv` appears.
 
 ### Explanation of SQL Components
 
 | SQL Component | Purpose |
 |---|---|
 | CREATE EXTERNAL TABLE | Creates an external table definition |
-| sales_csv | Name of the table |
+| sales_csv | Table name |
 | STRING | Text data type |
 | INT | Integer data type |
 | DOUBLE | Decimal data type |
@@ -250,11 +263,11 @@ A new table named sales_csv appears.
 | LOCATION | Connects the table to S3 |
 | skip.header.line.count | Ignores the CSV header |
 
-**Important:** An external table does not copy the data into Athena. It stores the table definition and reads the data directly from S3.
+**Important:** An external table stores metadata and reads the original data directly from S3. It does not copy the CSV data into Athena.
 
 ## STEP 11 – Verify the CSV Table
 
-Execute the following query:
+Execute:
 
 ```sql
 SELECT *
@@ -266,22 +279,9 @@ LIMIT 10;
 2. Check the Results section.
 
 **Expected Result:**
-
-Athena should display 10 rows and 12 columns.
-
-Columns include:
-- order_id
-- order_date
-- customer_id
-- product
-- category
-- quantity
-- unit_price
-- total_amount
-- city
-- payment_mode
-- year
-- month
+- 10 rows displayed.
+- 12 columns displayed.
+- Column names match the uploaded CSV dataset.
 
 ### Verify Total Records
 
@@ -292,15 +292,19 @@ SELECT COUNT(*) AS total_records
 FROM sales_csv;
 ```
 
-**Expected Result:** 20,000 records.
+**Expected Result:**
+
+| total_records |
+|---:|
+| 20,000 |
 
 **What did we achieve?**
 
-Verified that Athena can read the CSV file correctly from Amazon S3.
+Verified that Athena can successfully read all 20,000 records from the CSV dataset.
 
 ## STEP 12 – Execute Monthly Sales Query (Task A)
 
-**Requirement:** Calculate the number of orders and total sales for January 2025.
+**Requirement:** Calculate the total number of orders and total sales for January 2025.
 
 Execute:
 
@@ -318,7 +322,7 @@ GROUP BY year, month;
 
 Click Run.
 
-### Expected Result – January 2025
+### Actual Dataset Result – January 2025
 
 | Column | Result |
 |---|---:|
@@ -329,25 +333,25 @@ Click Run.
 
 ### SQL Explanation
 
-- SELECT: Selects the required columns.
-- COUNT(*): Counts the number of records.
+- SELECT: Selects required columns.
+- COUNT(*): Counts sales records.
 - SUM(total_amount): Calculates total sales.
 - WHERE: Filters January 2025.
-- GROUP BY: Groups results by year and month.
+- GROUP BY: Groups the results by year and month.
 
 **What did we achieve?**
 
-Successfully queried January 2025 sales data from the original CSV table.
+Successfully calculated January 2025 sales from the original CSV dataset.
 
 **Task A Completed.**
 
 ## STEP 13 – Record CSV Data Scanned and Execution Time
 
-This step is important because we will compare CSV and Parquet performance.
+This step is important for comparing CSV and Parquet performance.
 
 1. Open Athena Query Editor.
-2. Go to Recent queries or Query history.
-3. Locate the January 2025 query executed on sales_csv.
+2. Go to Recent queries.
+3. Locate the January 2025 query executed on `sales_csv`.
 4. Click its Execution ID.
 5. Open query execution details.
 6. Find:
@@ -357,16 +361,14 @@ This step is important because we will compare CSV and Parquet performance.
 
 ### CSV Query Performance
 
-| Metric | Value |
+| Metric | Actual Value |
 |---|---|
-| Data scanned | To be recorded from AWS |
-| Execution time | To be recorded from AWS |
+| Data scanned | To be recorded from Athena |
+| Query execution time | To be recorded from Athena |
 
-**Important:** Do not enter assumed values. Use the actual execution statistics from Athena.
+**Important:** Use actual execution statistics. Do not enter assumed values.
 
-Save screenshots of:
-- CSV monthly query result.
-- CSV query execution statistics.
+Save screenshots of the CSV query result and execution statistics.
 
 ---
 
@@ -374,19 +376,15 @@ Save screenshots of:
 
 ## STEP 14 – Create the Parquet Output Folder
 
-1. Open AWS Console.
-2. Search for S3.
-3. Click Buckets.
-4. Open your bucket:
+1. Open Amazon S3.
+2. Click Buckets.
+3. Open `athena-sales-project-arushi-2026`.
+4. Click Create folder.
+5. Enter:
 
-   athena-sales-project-arushi-2026
+   `sales-parquet`
 
-5. Click Create folder.
-6. Enter:
-
-   sales-parquet
-
-7. Click Create folder.
+6. Click Create folder.
 
 **Expected S3 Structure:**
 
@@ -399,39 +397,35 @@ athena-sales-project-arushi-2026/
 └── sales-parquet/
 ```
 
-**Important:** Keep sales-parquet empty. Athena CTAS will write the converted files here.
+**Important:** Keep the sales-parquet folder empty before executing CTAS.
 
 ## STEP 15 – Understand CTAS
 
 CTAS stands for Create Table As Select.
 
-It is used to create a new table using the results of an existing SELECT query.
+It creates a new table using the results of an existing SELECT query.
 
 In this project, CTAS will:
 
 1. Read data from sales_csv.
 2. Convert CSV data into Parquet format.
-3. Save Parquet files in Amazon S3.
-4. Divide the data into year and month partitions.
-5. Create a new Athena table called sales_parquet.
+3. Store Parquet files in Amazon S3.
+4. Partition data by year and month.
+5. Create a new table named sales_parquet.
 
-### Why Parquet?
+### Benefits of Parquet
 
-Parquet is a columnar storage format designed for analytical workloads.
-
-Benefits:
-- Efficient column-based storage.
-- Better compression.
+- Columnar storage format.
+- Efficient compression.
 - Reduced data scanning for suitable queries.
 - Improved analytical query performance.
 
 ## STEP 16 – Run the CTAS Query
 
-1. Open AWS Console.
-2. Go to Amazon Athena.
-3. Open Query Editor.
-4. Select database sales_db.
-5. Paste the following SQL:
+1. Open Amazon Athena.
+2. Go to Query Editor.
+3. Select database `sales_db`.
+4. Paste the following query:
 
 ```sql
 CREATE TABLE sales_parquet
@@ -457,12 +451,10 @@ SELECT
 FROM sales_csv;
 ```
 
-6. Click Run.
-7. Wait for successful execution.
+5. Click Run.
+6. Wait for successful execution.
 
-**Expected Result:**
-
-A new table named sales_parquet appears.
+**Expected Result:** A new table named `sales_parquet` is created.
 
 ### Important Checks
 
@@ -472,12 +464,12 @@ A new table named sales_parquet appears.
 
 **What happened?**
 
-The CTAS operation read the CSV records and wrote converted Parquet files to Amazon S3, organized by year and month.
+Athena read the CSV data and converted it into Parquet files organized by year and month.
 
 ## STEP 17 – Verify Parquet Files in S3
 
 1. Open Amazon S3.
-2. Select your bucket.
+2. Open your bucket.
 3. Open sales-parquet.
 4. Check the partition folders.
 5. Open year=2025.
@@ -502,28 +494,28 @@ sales-parquet/
     └── ...
 ```
 
-You should find files with the .parquet extension.
+You should find files with the `.parquet` extension.
 
 ### What is Partitioning?
 
 Partitioning divides data into separate folders based on column values.
 
-For example:
+Examples:
+
 - year=2025/month=1 contains January 2025 records.
 - year=2025/month=2 contains February 2025 records.
 - year=2026/month=1 contains January 2026 records.
 
-This allows Athena to skip irrelevant partitions when a query filters by year and month.
+This allows Athena to skip irrelevant folders when queries filter by year and month.
 
 **Task B Completed.**
 
 ## STEP 18 – Verify the Parquet Table in Athena
 
-1. Go to Amazon Athena.
-2. Open Query Editor.
-3. Select database sales_db.
-4. Refresh the Tables section.
-5. Find sales_parquet.
+1. Open Athena Query Editor.
+2. Select database sales_db.
+3. Refresh the Tables section.
+4. Find sales_parquet.
 
 ### Display Available Tables
 
@@ -540,8 +532,6 @@ sales_csv
 sales_parquet
 ```
 
-Both tables should appear.
-
 ### Verify Parquet Records
 
 Execute:
@@ -554,9 +544,7 @@ LIMIT 10;
 
 Click Run.
 
-**Expected Result:**
-
-Athena should display 10 records from the Parquet table.
+**Expected Result:** Athena displays 10 records from the Parquet table.
 
 The records should match the original CSV data.
 
@@ -566,11 +554,7 @@ The records should match the original CSV data.
 
 ## STEP 19 – Execute January 2025 Query on sales_parquet
 
-We will execute the same monthly sales query that was previously executed on the CSV table.
-
-The only difference is the table name.
-
-Execute:
+Execute the same monthly query, changing only the table name.
 
 ```sql
 SELECT
@@ -599,13 +583,11 @@ Click Run.
 
 Successfully executed the same analytical query on the Parquet table.
 
-Both tables should return the same result, showing that the conversion preserved the sales information.
+Both tables should return the same result, proving that the conversion preserved the sales information.
 
 **Task C Completed.**
 
 ## STEP 20 – Record Parquet Data Scanned and Execution Time
-
-Now we need the performance details of the Parquet query.
 
 1. Open Athena Query History or Recent queries.
 2. Find the January 2025 query executed on sales_parquet.
@@ -614,18 +596,16 @@ Now we need the performance details of the Parquet query.
 5. Find:
    - Data scanned
    - Query execution time
-6. Record the values.
+6. Record both values.
 
 ### Parquet Query Performance
 
-| Metric | Value |
+| Metric | Actual Value |
 |---|---|
-| Data scanned | To be recorded from AWS |
-| Execution time | To be recorded from AWS |
+| Data scanned | To be recorded from Athena |
+| Query execution time | To be recorded from Athena |
 
-Save screenshots of:
-- Parquet monthly query result.
-- Parquet query execution statistics.
+Save screenshots of the Parquet query result and execution statistics.
 
 ---
 
@@ -633,81 +613,67 @@ Save screenshots of:
 
 ## STEP 21 – Compare CSV and Parquet Performance
 
-Now we have two sets of execution details:
+We now have two tables:
 
 - CSV table: sales_csv
 - Parquet table: sales_parquet
 
 Both queries use the same conditions:
+
 - Year = 2025
 - Month = 1
 - COUNT(*) for total orders
 - SUM(total_amount) for total sales
 
-### Performance Comparison Table
+### Performance Comparison
 
 | Metric | CSV | Parquet |
 |---|---|---|
-| Data scanned | Enter actual value | Enter actual value |
-| Execution time | Enter actual value | Enter actual value |
+| Data scanned | Actual AWS value | Actual AWS value |
+| Execution time | Actual AWS value | Actual AWS value |
 | Total orders | 1,184 | 1,184 |
 | Total sales | 4,004,766 | 4,004,766 |
 
-### Data Scanned Reduction
-
-Use the following formula:
+### Data Scanned Reduction Formula
 
 Data Scanned Reduction (%) =
 
 ((CSV Data Scanned - Parquet Data Scanned) / CSV Data Scanned) × 100
 
-### Conclusion
+### Performance Analysis
 
-The project demonstrates how CSV data can be converted into Parquet format using Amazon Athena CTAS.
+Compare the actual data scanned and query execution time for both formats.
 
-Both formats produce the same analytical results. The actual data scanned and execution time measurements can be used to evaluate the performance difference.
+Parquet uses columnar storage and partitioning, which can reduce unnecessary data scanning for queries that filter on partition columns.
 
-Parquet with partitioning can reduce unnecessary data scanning for queries that filter on partition columns.
-
----
-
-# FINAL PROJECT OUTCOME
-
-By completing this project, we successfully demonstrated:
-
-1. Amazon S3 bucket creation and dataset storage.
-2. Athena database creation.
-3. External table creation on CSV data.
-4. SQL-based monthly sales analysis.
-5. Data conversion from CSV to Parquet using CTAS.
-6. Year and month partitioning.
-7. Verification of CSV and Parquet tables.
-8. Performance comparison using Athena execution statistics.
-
-## Screenshots
-
-Add your actual AWS screenshots in the screenshots folder.
-
-| Screenshot | Description |
-|---|---|
-| 01-s3-bucket.png | S3 bucket creation |
-| 02-csv-upload.png | CSV dataset uploaded |
-| 03-athena-database.png | sales_db database |
-| 04-csv-table.png | sales_csv table |
-| 05-csv-query-results.png | January CSV query output |
-| 06-csv-statistics.png | CSV execution statistics |
-| 07-parquet-folder.png | Parquet partition folders |
-| 08-parquet-table.png | sales_parquet table |
-| 09-parquet-query-results.png | January Parquet query output |
-| 10-parquet-statistics.png | Parquet execution statistics |
-| 11-query-history.png | Athena Query History |
+The actual performance improvement should be calculated from the Athena execution statistics.
 
 ---
 
-## Author
+# 5. Final Project Results
 
-**Arushi Gupta**
+The following tasks were implemented:
 
-GitHub: https://github.com/ArushiGUPTA2512
+1. Created an Amazon S3 bucket.
+2. Uploaded the original sales CSV dataset.
+3. Created the sales_db database.
+4. Created the sales_csv external table.
+5. Verified all 20,000 CSV records.
+6. Calculated January 2025 sales.
+7. Recorded CSV query statistics.
+8. Created the sales-parquet output folder.
+9. Converted CSV data into Parquet using CTAS.
+10. Partitioned data by year and month.
+11. Verified Parquet files in S3.
+12. Created and verified the sales_parquet table.
+13. Executed the same monthly query on Parquet.
+14. Compared CSV and Parquet performance.
 
-Repository: MSE-2-AWS-2
+# 6. Conclusion
+
+This project demonstrates how AWS cloud services can be used for data storage, processing and analytics.
+
+Amazon S3 was used to store the original CSV dataset and converted Parquet files. Amazon Athena was used to create external tables, execute SQL queries and convert data using CTAS. AWS Glue Data Catalog maintained the database and table metadata.
+
+The CSV and Parquet tables produced the same January 2025 sales results. Query execution statistics provide the basis for evaluating the performance differences between the two formats.
+
